@@ -1,0 +1,1731 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Interview Trainer — IBM Watsonx</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    /* ── CSS Variables ── */
+    :root {
+      --bg:           #f4f6fb;
+      --surface:      #ffffff;
+      --surface2:     #f0f2f8;
+      --border:       #e2e6f0;
+      --text:         #1a1d2e;
+      --muted:        #6b7280;
+      --accent:       #4f46e5;
+      --accent2:      #7c3aed;
+      --success:      #10b981;
+      --warning:      #f59e0b;
+      --danger:       #ef4444;
+      --info:         #3b82f6;
+      --chat-user:    #4f46e5;
+      --chat-bot:     #f0f2f8;
+      --chat-bot-txt: #1a1d2e;
+      --sidebar-w:    260px;
+      --radius:       14px;
+      --shadow:       0 4px 24px rgba(79,70,229,.08);
+      --transition:   .2s cubic-bezier(.4,0,.2,1);
+    }
+    [data-theme="dark"] {
+      --bg:           #0f1117;
+      --surface:      #1a1d2e;
+      --surface2:     #252840;
+      --border:       #2e3250;
+      --text:         #e8eaf6;
+      --muted:        #9094b0;
+      --accent:       #6366f1;
+      --accent2:      #a78bfa;
+      --success:      #34d399;
+      --warning:      #fbbf24;
+      --danger:       #f87171;
+      --info:         #60a5fa;
+      --chat-user:    #4f46e5;
+      --chat-bot:     #252840;
+      --chat-bot-txt: #e8eaf6;
+      --shadow:       0 4px 24px rgba(0,0,0,.4);
+    }
+
+    /* ── Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      transition: background var(--transition), color var(--transition);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+
+    /* ── Layout ── */
+    .app-wrapper { display: flex; min-height: 100vh; }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: var(--sidebar-w);
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      z-index: 100;
+      transition: transform var(--transition);
+    }
+    .sidebar-brand {
+      padding: 22px 20px 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .brand-icon {
+      width: 38px; height: 38px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 18px;
+    }
+    .brand-name { font-weight: 700; font-size: 15px; line-height: 1.2; }
+    .brand-sub  { font-size: 10px; color: var(--muted); font-weight: 400; }
+    .sidebar-nav { flex: 1; padding: 16px 10px; overflow-y: auto; }
+    .nav-section { font-size: 10px; font-weight: 600; color: var(--muted);
+                   text-transform: uppercase; letter-spacing: .08em;
+                   padding: 10px 10px 4px; }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 12px; border-radius: 9px; cursor: pointer;
+      font-size: 13.5px; font-weight: 500; color: var(--text);
+      transition: background var(--transition), color var(--transition);
+      margin-bottom: 2px; border: none; background: none; width: 100%; text-align: left;
+    }
+    .nav-item:hover  { background: var(--surface2); }
+    .nav-item.active { background: linear-gradient(135deg,rgba(79,70,229,.15),rgba(124,58,237,.1));
+                       color: var(--accent); }
+    .nav-item i { font-size: 16px; width: 20px; text-align: center; }
+    .nav-badge {
+      margin-left: auto; background: var(--accent); color: #fff;
+      font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 99px;
+    }
+    .sidebar-footer {
+      padding: 14px 16px; border-top: 1px solid var(--border);
+      display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted);
+    }
+    .ibm-badge {
+      margin-left: auto; background: #0f62fe; color: #fff;
+      font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px;
+    }
+
+    /* ── Main ── */
+    .main-content {
+      margin-left: var(--sidebar-w);
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    /* ── Topbar ── */
+    .topbar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: sticky; top: 0; z-index: 90;
+    }
+    .topbar-title { font-weight: 700; font-size: 17px; flex: 1; }
+    .topbar-subtitle { font-size: 12px; color: var(--muted); font-weight: 400; }
+    .btn-icon {
+      width: 36px; height: 36px; border-radius: 9px; border: 1px solid var(--border);
+      background: var(--surface2); color: var(--text); display: flex;
+      align-items: center; justify-content: center; cursor: pointer;
+      font-size: 16px; transition: all var(--transition);
+    }
+    .btn-icon:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .hamburger { display: none; }
+
+    /* ── Pages ── */
+    .page { display: none; padding: 28px 28px 48px; animation: fadeIn .3s ease; }
+    .page.active { display: block; }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 22px; box-shadow: var(--shadow);
+    }
+    .card-sm { padding: 16px; }
+    .card-header-line {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid var(--border);
+    }
+    .card-icon {
+      width: 36px; height: 36px; border-radius: 9px;
+      background: linear-gradient(135deg,var(--accent),var(--accent2));
+      display: flex; align-items: center; justify-content: center; color:#fff; font-size:16px;
+    }
+    .card-title { font-weight: 600; font-size: 15px; }
+    .card-sub   { font-size: 12px; color: var(--muted); }
+
+    /* ── Dashboard Stats ── */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(160px,1fr)); gap: 16px; }
+    .stat-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 20px 18px; box-shadow: var(--shadow); position: relative; overflow: hidden;
+    }
+    .stat-card::before {
+      content:''; position:absolute; top:0; left:0; right:0; height:3px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+    }
+    .stat-value { font-size: 28px; font-weight: 700; color: var(--accent); line-height: 1; }
+    .stat-label { font-size: 12px; color: var(--muted); margin-top: 4px; font-weight: 500; }
+    .stat-icon  { position: absolute; right: 14px; top: 14px; font-size: 22px; opacity: .15; }
+
+    /* ── Progress Bar ── */
+    .progress-bar-custom {
+      height: 8px; background: var(--surface2); border-radius: 99px; overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%; border-radius: 99px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      transition: width .6s cubic-bezier(.4,0,.2,1);
+    }
+
+    /* ── Session Setup ── */
+    .setup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .form-label  { font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text); }
+    .form-select, .form-control {
+      background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+      border-radius: 9px; padding: 9px 13px; font-size: 13.5px;
+      transition: border-color var(--transition), box-shadow var(--transition);
+      width: 100%;
+    }
+    .form-select:focus, .form-control:focus {
+      outline: none; border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(79,70,229,.15);
+      background: var(--surface2);
+      color: var(--text);
+    }
+    .form-select option { background: var(--surface); }
+
+    /* ── Chip Selector ── */
+    .chip-group { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip {
+      padding: 6px 14px; border-radius: 99px; font-size: 12.5px; font-weight: 500;
+      border: 1.5px solid var(--border); background: var(--surface2); color: var(--text);
+      cursor: pointer; transition: all var(--transition);
+    }
+    .chip:hover  { border-color: var(--accent); color: var(--accent); }
+    .chip.active { border-color: var(--accent); background: var(--accent); color: #fff; }
+
+    /* ── Interview Chat ── */
+    .chat-wrapper {
+      display: flex; flex-direction: column; height: calc(100vh - 60px - 100px);
+      max-height: 640px; min-height: 400px;
+    }
+    .chat-messages {
+      flex: 1; overflow-y: auto; padding: 20px;
+      display: flex; flex-direction: column; gap: 16px;
+    }
+    .msg-row { display: flex; align-items: flex-end; gap: 10px; }
+    .msg-row.user { flex-direction: row-reverse; }
+    .msg-avatar {
+      width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; font-size: 14px;
+    }
+    .msg-avatar.bot { background: linear-gradient(135deg,var(--accent),var(--accent2)); color:#fff; }
+    .msg-avatar.user { background: var(--surface2); color: var(--accent); border: 1.5px solid var(--border); }
+    .msg-bubble {
+      max-width: 72%; padding: 12px 16px; border-radius: 14px;
+      font-size: 13.5px; line-height: 1.6;
+      animation: bubbleIn .25s ease;
+    }
+    .msg-bubble.bot  {
+      background: var(--chat-bot); color: var(--chat-bot-txt);
+      border-bottom-left-radius: 4px;
+    }
+    .msg-bubble.user {
+      background: var(--chat-user); color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+    @keyframes bubbleIn { from { opacity:0; transform:scale(.95); } to { opacity:1; transform:scale(1); } }
+    .msg-time { font-size: 10px; color: var(--muted); margin-top: 4px; }
+    .msg-row.user .msg-time { text-align: right; }
+
+    .typing-indicator {
+      display: flex; align-items: center; gap: 4px; padding: 12px 16px;
+      background: var(--chat-bot); border-radius: 14px; border-bottom-left-radius: 4px;
+      width: fit-content;
+    }
+    .typing-dot {
+      width: 7px; height: 7px; border-radius: 50%; background: var(--muted);
+      animation: typingBounce 1.2s infinite;
+    }
+    .typing-dot:nth-child(2) { animation-delay: .2s; }
+    .typing-dot:nth-child(3) { animation-delay: .4s; }
+    @keyframes typingBounce {
+      0%,60%,100% { transform: translateY(0); }
+      30%          { transform: translateY(-6px); }
+    }
+
+    /* ── Chat Input ── */
+    .chat-input-area {
+      padding: 16px 20px; border-top: 1px solid var(--border);
+      background: var(--surface); display: flex; gap: 10px; align-items: flex-end;
+    }
+    .chat-input-wrap { flex: 1; position: relative; }
+    .chat-textarea {
+      width: 100%; resize: none; padding: 11px 14px; border-radius: 12px;
+      border: 1.5px solid var(--border); background: var(--surface2);
+      color: var(--text); font-size: 13.5px; font-family: inherit;
+      max-height: 120px; min-height: 44px; overflow-y: auto;
+      transition: border-color var(--transition);
+    }
+    .chat-textarea:focus { outline:none; border-color: var(--accent); }
+    .btn-send {
+      width: 44px; height: 44px; border-radius: 12px; border: none;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff; font-size: 18px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: opacity var(--transition), transform var(--transition);
+      flex-shrink: 0;
+    }
+    .btn-send:hover  { opacity: .9; transform: scale(1.05); }
+    .btn-send:active { transform: scale(.97); }
+
+    /* ── Timer ── */
+    .timer-bar {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 20px; background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+    }
+    .timer-display {
+      font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums;
+      color: var(--accent); min-width: 65px;
+    }
+    .timer-display.warning { color: var(--warning); }
+    .timer-display.danger  { color: var(--danger);  animation: pulse 1s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.6} }
+    .q-progress-text { font-size: 12px; color: var(--muted); margin-left: auto; }
+
+    /* ── Score Badge ── */
+    .score-badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 46px; height: 46px; border-radius: 50%; font-size: 16px; font-weight: 700;
+      color: #fff; flex-shrink: 0;
+    }
+    .score-high   { background: var(--success); }
+    .score-mid    { background: var(--warning); }
+    .score-low    { background: var(--danger);  }
+
+    /* ── Feedback Card ── */
+    .feedback-card {
+      border: 1px solid var(--border); border-radius: 12px;
+      overflow: hidden; margin-bottom: 12px;
+    }
+    .feedback-header {
+      padding: 12px 16px; background: var(--surface2);
+      display: flex; align-items: center; gap: 10px; cursor: pointer;
+    }
+    .feedback-body { padding: 16px; display: none; }
+    .feedback-body.open { display: block; }
+    .tag {
+      display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px;
+      border-radius: 99px; margin-right: 4px; margin-bottom: 3px;
+    }
+    .tag-success { background: rgba(16,185,129,.12); color: var(--success); }
+    .tag-warn    { background: rgba(245,158,11,.12);  color: var(--warning); }
+    .tag-info    { background: rgba(59,130,246,.12);  color: var(--info);    }
+
+    /* ── Upload Area ── */
+    .upload-zone {
+      border: 2px dashed var(--border); border-radius: 12px; padding: 32px 20px;
+      text-align: center; cursor: pointer; transition: all var(--transition);
+      background: var(--surface2);
+    }
+    .upload-zone:hover, .upload-zone.drag { border-color: var(--accent); background: rgba(79,70,229,.05); }
+    .upload-icon { font-size: 38px; color: var(--muted); margin-bottom: 10px; }
+
+    /* ── Trend Chart ── */
+    .chart-wrap { position: relative; height: 200px; }
+    .chart-bars { display: flex; align-items: flex-end; gap: 8px; height: 160px; padding: 0 4px; }
+    .chart-bar-col { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; min-width: 0; }
+    .chart-bar {
+      width: 100%; border-radius: 6px 6px 0 0;
+      background: linear-gradient(180deg, var(--accent), var(--accent2));
+      min-height: 4px; transition: height .6s cubic-bezier(.4,0,.2,1);
+      position: relative;
+    }
+    .chart-bar:hover::after {
+      content: attr(data-val);
+      position: absolute; top: -22px; left: 50%; transform: translateX(-50%);
+      background: var(--text); color: var(--bg); font-size: 11px; font-weight:600;
+      padding: 2px 6px; border-radius: 4px; white-space: nowrap;
+    }
+    .chart-lbl { font-size: 10px; color: var(--muted); text-align: center; overflow: hidden;
+                 text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+
+    /* ── Buttons ── */
+    .btn-primary-custom {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff; border: none; border-radius: 10px;
+      padding: 10px 22px; font-size: 13.5px; font-weight: 600; cursor: pointer;
+      transition: opacity var(--transition), transform var(--transition);
+      display: inline-flex; align-items: center; gap: 7px;
+    }
+    .btn-primary-custom:hover  { opacity: .9; }
+    .btn-primary-custom:active { transform: scale(.97); }
+    .btn-outline-custom {
+      background: transparent; border: 1.5px solid var(--border);
+      color: var(--text); border-radius: 10px; padding: 9px 20px;
+      font-size: 13.5px; font-weight: 500; cursor: pointer;
+      transition: all var(--transition);
+      display: inline-flex; align-items: center; gap: 7px;
+    }
+    .btn-outline-custom:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── Grade Ring ── */
+    .grade-ring {
+      width: 80px; height: 80px; border-radius: 50%;
+      background: conic-gradient(var(--accent) 0%, var(--surface2) 0%);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; font-weight: 800; color: var(--text);
+      position: relative; flex-shrink: 0;
+    }
+    .grade-ring::before {
+      content:''; position:absolute; inset:6px; border-radius:50%;
+      background: var(--surface);
+    }
+    .grade-ring span { position: relative; z-index: 1; }
+
+    /* ── Misc ── */
+    .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+    .section-title { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+    .section-sub   { font-size: 13px; color: var(--muted); margin-bottom: 22px; }
+    .empty-state { text-align: center; padding: 48px 20px; color: var(--muted); }
+    .empty-state i { font-size: 44px; margin-bottom: 12px; opacity:.4; }
+    .toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 9999; }
+    .toast-custom {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 14px 18px; box-shadow: var(--shadow);
+      display: flex; align-items: center; gap: 10px; font-size: 13px;
+      animation: slideUp .3s ease; min-width: 260px; max-width: 340px;
+    }
+    @keyframes slideUp { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
+    .session-config-pill {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 99px; padding: 4px 12px; font-size: 11.5px; font-weight: 500;
+      color: var(--muted); display: inline-flex; align-items: center; gap: 5px;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.open { transform: translateX(0); box-shadow: 0 0 0 100vw rgba(0,0,0,.4); }
+      .main-content { margin-left: 0; }
+      .hamburger { display: flex; }
+      .setup-grid { grid-template-columns: 1fr; }
+      .page { padding: 18px 16px 40px; }
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Sidebar Overlay -->
+<div id="sidebarOverlay" style="display:none;position:fixed;inset:0;z-index:99;" onclick="closeSidebar()"></div>
+
+<div class="app-wrapper">
+  <!-- ══ SIDEBAR ══ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon"><i class="bi bi-cpu-fill"></i></div>
+      <div>
+        <div class="brand-name">Interview Trainer</div>
+        <div class="brand-sub">Powered by IBM Watsonx</div>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section">Main</div>
+      <button class="nav-item active" onclick="showPage('dashboard')">
+        <i class="bi bi-grid-1x2-fill"></i> Dashboard
+      </button>
+      <button class="nav-item" onclick="showPage('interview')">
+        <i class="bi bi-camera-video-fill"></i> Mock Interview
+      </button>
+      <button class="nav-item" onclick="showPage('questions')">
+        <i class="bi bi-question-circle-fill"></i> Question Bank
+      </button>
+      <button class="nav-item" onclick="showPage('chat')">
+        <i class="bi bi-chat-dots-fill"></i> AI Chat Coach
+      </button>
+
+      <div class="nav-section" style="margin-top:10px;">Reports</div>
+      <button class="nav-item" onclick="showPage('progress')">
+        <i class="bi bi-graph-up-arrow"></i> Progress Tracker
+        <span class="nav-badge" id="sessionCountBadge">0</span>
+      </button>
+      <button class="nav-item" onclick="showPage('settings')">
+        <i class="bi bi-sliders"></i> Agent Settings
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <i class="bi bi-circle-fill" style="color:var(--success);font-size:9px;"></i>
+      <span>Model: Granite-13B</span>
+      <span class="ibm-badge">IBM</span>
+    </div>
+  </aside>
+
+  <!-- ══ MAIN ══ -->
+  <div class="main-content">
+    <!-- Topbar -->
+    <header class="topbar">
+      <button class="btn-icon hamburger" id="hamburgerBtn" onclick="toggleSidebar()">
+        <i class="bi bi-list"></i>
+      </button>
+      <div style="flex:1;">
+        <div class="topbar-title" id="topbarTitle">Dashboard</div>
+      </div>
+      <div id="sessionPills" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+      <button class="btn-icon" onclick="toggleTheme()" title="Toggle dark mode">
+        <i class="bi bi-moon-stars-fill" id="themeIcon"></i>
+      </button>
+    </header>
+
+    <!-- ══════════ PAGE: DASHBOARD ══════════ -->
+    <section class="page active" id="page-dashboard">
+      <div class="section-title">Welcome back 👋</div>
+      <div class="section-sub">Your AI-powered interview coaching hub</div>
+
+      <div class="stats-grid mb-4">
+        <div class="stat-card">
+          <i class="bi bi-camera-video stat-icon"></i>
+          <div class="stat-value" id="statSessions">0</div>
+          <div class="stat-label">Sessions Completed</div>
+        </div>
+        <div class="stat-card">
+          <i class="bi bi-star-fill stat-icon"></i>
+          <div class="stat-value" id="statAvgScore">—</div>
+          <div class="stat-label">Average Score</div>
+        </div>
+        <div class="stat-card">
+          <i class="bi bi-trophy-fill stat-icon"></i>
+          <div class="stat-value" id="statBestGrade">—</div>
+          <div class="stat-label">Best Grade</div>
+        </div>
+        <div class="stat-card">
+          <i class="bi bi-arrow-up-circle-fill stat-icon"></i>
+          <div class="stat-value" id="statTrend" style="font-size:16px;">—</div>
+          <div class="stat-label">Progress Trend</div>
+        </div>
+      </div>
+
+      <div class="row g-3">
+        <div class="col-lg-7">
+          <div class="card">
+            <div class="card-header-line">
+              <div class="card-icon"><i class="bi bi-play-circle-fill"></i></div>
+              <div>
+                <div class="card-title">Start a Mock Interview</div>
+                <div class="card-sub">Configure and launch your session</div>
+              </div>
+            </div>
+
+            <div class="setup-grid mb-3">
+              <div>
+                <div class="form-label">Interview Type</div>
+                <select class="form-select" id="cfg_type">
+                  <option value="mixed">Mixed (HR + Tech + Behavioral)</option>
+                  <option value="hr">HR / Cultural Fit</option>
+                  <option value="technical">Technical</option>
+                  <option value="behavioral">Behavioral (STAR)</option>
+                </select>
+              </div>
+              <div>
+                <div class="form-label">Difficulty</div>
+                <select class="form-select" id="cfg_difficulty">
+                  <option value="intermediate">Intermediate</option>
+                  <option value="beginner">Beginner</option>
+                  <option value="advanced">Advanced</option>
+                </select>
+              </div>
+              <div>
+                <div class="form-label">Target Role</div>
+                <select class="form-select" id="cfg_role">
+                  <option value="software_engineering">Software Engineering</option>
+                  <option value="data_science">Data Science / ML</option>
+                  <option value="core_engineering">Core Engineering</option>
+                  <option value="finance">Finance</option>
+                  <option value="sales">Sales / Biz Dev</option>
+                  <option value="generic">Generic</option>
+                </select>
+              </div>
+              <div>
+                <div class="form-label">Questions</div>
+                <select class="form-select" id="cfg_count">
+                  <option value="3">3 (Quick)</option>
+                  <option value="5" selected>5 (Standard)</option>
+                  <option value="8">8 (Full)</option>
+                  <option value="10">10 (Deep)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <div class="form-label">Tone</div>
+              <div class="chip-group" id="toneChips">
+                <div class="chip active" data-val="professional" onclick="selectChip(this,'toneChips')">Professional</div>
+                <div class="chip" data-val="friendly"      onclick="selectChip(this,'toneChips')">Friendly</div>
+                <div class="chip" data-val="strict"        onclick="selectChip(this,'toneChips')">Strict</div>
+                <div class="chip" data-val="encouraging"   onclick="selectChip(this,'toneChips')">Encouraging</div>
+              </div>
+            </div>
+
+            <!-- Upload -->
+            <div class="mb-3">
+              <div class="form-label">Resume / Job Description <span style="color:var(--muted);font-weight:400;">(optional)</span></div>
+              <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+                <div class="upload-icon"><i class="bi bi-cloud-upload"></i></div>
+                <div style="font-weight:600;font-size:13px;">Drop your file here or click to browse</div>
+                <div style="font-size:12px;color:var(--muted);margin-top:4px;">PDF, DOCX, TXT — Max 5 MB</div>
+              </div>
+              <input type="file" id="fileInput" accept=".pdf,.docx,.txt" style="display:none" onchange="handleFileUpload(this)" />
+              <div id="uploadStatus" style="margin-top:8px;font-size:12px;color:var(--muted);"></div>
+            </div>
+
+            <div class="mb-3">
+              <div class="form-label">Or paste Resume / JD text</div>
+              <textarea class="form-control" id="contextText" rows="3" placeholder="Paste resume or job description here…"></textarea>
+            </div>
+
+            <button class="btn-primary-custom w-100" onclick="startInterview()">
+              <i class="bi bi-play-fill"></i> Launch Interview Session
+            </button>
+          </div>
+        </div>
+
+        <div class="col-lg-5">
+          <div class="card mb-3">
+            <div class="card-header-line">
+              <div class="card-icon" style="background:linear-gradient(135deg,var(--success),#059669);">
+                <i class="bi bi-clock-history"></i>
+              </div>
+              <div>
+                <div class="card-title">Recent Sessions</div>
+                <div class="card-sub">Last 5 completed sessions</div>
+              </div>
+            </div>
+            <div id="recentSessionsList">
+              <div class="empty-state">
+                <i class="bi bi-journal-x d-block"></i>
+                No sessions yet — start your first interview!
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header-line">
+              <div class="card-icon" style="background:linear-gradient(135deg,var(--warning),#d97706);">
+                <i class="bi bi-lightbulb-fill"></i>
+              </div>
+              <div><div class="card-title">Quick Tips</div></div>
+            </div>
+            <ul style="font-size:13px;line-height:1.8;color:var(--muted);padding-left:18px;">
+              <li>Use the <strong>STAR method</strong> for behavioral questions</li>
+              <li>Speak clearly — clarity is scored separately</li>
+              <li>Upload your resume for tailored questions</li>
+              <li>Review AI feedback after every answer</li>
+              <li>Aim for a score of 7+ to get a strong recommendation</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════ PAGE: INTERVIEW ══════════ -->
+    <section class="page" id="page-interview">
+      <!-- Pre-session screen -->
+      <div id="preSession">
+        <div class="section-title">Mock Interview</div>
+        <div class="section-sub">Configure your session from the Dashboard, then click Launch.</div>
+        <button class="btn-primary-custom mt-2" onclick="showPage('dashboard')">
+          <i class="bi bi-arrow-left"></i> Go to Setup
+        </button>
+      </div>
+
+      <!-- Live session -->
+      <div id="liveSession" style="display:none;">
+        <div class="card" style="padding:0;overflow:hidden;">
+          <!-- Timer bar -->
+          <div class="timer-bar" id="timerBar">
+            <i class="bi bi-stopwatch" style="color:var(--accent);"></i>
+            <span class="timer-display" id="timerDisplay">00:00</span>
+            <div style="flex:1;">
+              <div class="progress-bar-custom">
+                <div class="progress-fill" id="timerProgress" style="width:100%;"></div>
+              </div>
+            </div>
+            <span class="q-progress-text" id="qProgressText">Q 1 / 5</span>
+            <button class="btn-outline-custom" style="padding:5px 12px;font-size:12px;" onclick="endSessionEarly()">
+              <i class="bi bi-stop-circle"></i> End
+            </button>
+          </div>
+
+          <!-- Config pills -->
+          <div style="padding:10px 20px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;gap:6px;flex-wrap:wrap;" id="sessionConfigPills"></div>
+
+          <!-- Chat area -->
+          <div class="chat-wrapper">
+            <div class="chat-messages" id="chatMessages"></div>
+          </div>
+
+          <!-- Input -->
+          <div class="chat-input-area">
+            <div class="chat-input-wrap">
+              <textarea class="chat-textarea" id="answerInput" rows="1"
+                placeholder="Type your answer here… (Shift+Enter for new line)"
+                oninput="autoResize(this)"
+                onkeydown="handleAnswerKey(event)"></textarea>
+            </div>
+            <button class="btn-send" id="sendBtn" onclick="submitAnswer()" title="Submit Answer">
+              <i class="bi bi-send-fill"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Post session report -->
+      <div id="sessionReport" style="display:none;"></div>
+    </section>
+
+    <!-- ══════════ PAGE: QUESTION BANK ══════════ -->
+    <section class="page" id="page-questions">
+      <div class="section-title">Question Bank</div>
+      <div class="section-sub">Generate interview questions for practice — no session needed</div>
+
+      <div class="row g-3">
+        <div class="col-lg-4">
+          <div class="card">
+            <div class="card-header-line">
+              <div class="card-icon"><i class="bi bi-sliders2"></i></div>
+              <div><div class="card-title">Generate Questions</div></div>
+            </div>
+            <div class="mb-3">
+              <div class="form-label">Interview Type</div>
+              <select class="form-select" id="qb_type">
+                <option value="mixed">Mixed</option>
+                <option value="hr">HR</option>
+                <option value="technical">Technical</option>
+                <option value="behavioral">Behavioral</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <div class="form-label">Difficulty</div>
+              <select class="form-select" id="qb_difficulty">
+                <option value="intermediate">Intermediate</option>
+                <option value="beginner">Beginner</option>
+                <option value="advanced">Advanced</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <div class="form-label">Role</div>
+              <select class="form-select" id="qb_role">
+                <option value="software_engineering">Software Engineering</option>
+                <option value="data_science">Data Science</option>
+                <option value="core_engineering">Core Engineering</option>
+                <option value="finance">Finance</option>
+                <option value="sales">Sales</option>
+                <option value="generic">Generic</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <div class="form-label">Number of Questions</div>
+              <select class="form-select" id="qb_count">
+                <option value="5">5</option>
+                <option value="10" selected>10</option>
+                <option value="15">15</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <div class="form-label">Context (optional)</div>
+              <textarea class="form-control" id="qb_context" rows="3" placeholder="Paste JD or resume…"></textarea>
+            </div>
+            <button class="btn-primary-custom w-100" onclick="generateQuestions()">
+              <i class="bi bi-stars"></i> Generate
+            </button>
+          </div>
+        </div>
+
+        <div class="col-lg-8">
+          <div class="card" style="min-height:400px;">
+            <div class="card-header-line">
+              <div class="card-icon" style="background:linear-gradient(135deg,var(--info),#2563eb);">
+                <i class="bi bi-list-ol"></i>
+              </div>
+              <div><div class="card-title">Generated Questions</div></div>
+              <button class="btn-outline-custom ms-auto" style="padding:5px 12px;font-size:12px;" onclick="copyQuestions()" id="copyQBtn" disabled>
+                <i class="bi bi-clipboard"></i> Copy All
+              </button>
+            </div>
+            <div id="questionsList">
+              <div class="empty-state">
+                <i class="bi bi-question-diamond d-block"></i>
+                Configure and click "Generate" to see questions
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════ PAGE: AI CHAT COACH ══════════ -->
+    <section class="page" id="page-chat">
+      <div class="section-title">AI Chat Coach</div>
+      <div class="section-sub">Ask anything about interview prep, get tips, or practice answers</div>
+
+      <div class="card" style="padding:0;overflow:hidden;max-width:800px;">
+        <div class="chat-wrapper" style="height:520px;">
+          <div class="chat-messages" id="coachMessages">
+            <div class="msg-row">
+              <div class="msg-avatar bot"><i class="bi bi-cpu-fill"></i></div>
+              <div>
+                <div class="msg-bubble bot">Hi! I'm your AI Interview Coach powered by IBM Granite. Ask me anything — interview tips, how to answer tough questions, resume advice, or practice a specific question with me. 💡</div>
+                <div class="msg-time">Now</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="chat-input-area">
+          <div class="chat-input-wrap">
+            <textarea class="chat-textarea" id="coachInput" rows="1"
+              placeholder="Ask your coach anything…"
+              oninput="autoResize(this)"
+              onkeydown="handleCoachKey(event)"></textarea>
+          </div>
+          <button class="btn-send" onclick="sendCoachMessage()">
+            <i class="bi bi-send-fill"></i>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════ PAGE: PROGRESS TRACKER ══════════ -->
+    <section class="page" id="page-progress">
+      <div class="section-title">Progress Tracker</div>
+      <div class="section-sub">Monitor your improvement across sessions</div>
+      <div id="progressContent">
+        <div class="empty-state">
+          <i class="bi bi-graph-up d-block"></i>
+          Complete a session to see your progress here
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════ PAGE: SETTINGS ══════════ -->
+    <section class="page" id="page-settings">
+      <div class="section-title">Agent Settings</div>
+      <div class="section-sub">Customize the AI agent behavior — changes apply to new sessions</div>
+
+      <div class="row g-3" style="max-width:700px;">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-header-line">
+              <div class="card-icon"><i class="bi bi-robot"></i></div>
+              <div><div class="card-title">Agent Configuration</div></div>
+            </div>
+            <div class="row g-3">
+              <div class="col-sm-6">
+                <div class="form-label">Default Interview Type</div>
+                <select class="form-select" id="set_type">
+                  <option value="mixed">Mixed</option>
+                  <option value="hr">HR</option>
+                  <option value="technical">Technical</option>
+                  <option value="behavioral">Behavioral</option>
+                </select>
+              </div>
+              <div class="col-sm-6">
+                <div class="form-label">Default Difficulty</div>
+                <select class="form-select" id="set_difficulty">
+                  <option value="beginner">Beginner</option>
+                  <option value="intermediate">Intermediate</option>
+                  <option value="advanced">Advanced</option>
+                </select>
+              </div>
+              <div class="col-sm-6">
+                <div class="form-label">Default Target Role</div>
+                <select class="form-select" id="set_role">
+                  <option value="software_engineering">Software Engineering</option>
+                  <option value="data_science">Data Science</option>
+                  <option value="core_engineering">Core Engineering</option>
+                  <option value="finance">Finance</option>
+                  <option value="sales">Sales</option>
+                  <option value="generic">Generic</option>
+                </select>
+              </div>
+              <div class="col-sm-6">
+                <div class="form-label">Default Tone</div>
+                <select class="form-select" id="set_tone">
+                  <option value="professional">Professional</option>
+                  <option value="friendly">Friendly</option>
+                  <option value="strict">Strict</option>
+                  <option value="encouraging">Encouraging</option>
+                </select>
+              </div>
+              <div class="col-sm-6">
+                <div class="form-label">Questions per Session</div>
+                <select class="form-select" id="set_qcount">
+                  <option value="3">3</option>
+                  <option value="5">5</option>
+                  <option value="8">8</option>
+                  <option value="10">10</option>
+                </select>
+              </div>
+              <div class="col-sm-6">
+                <div class="form-label">Max Follow-ups per Q</div>
+                <select class="form-select" id="set_followups">
+                  <option value="0">0 (Disabled)</option>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                </select>
+              </div>
+              <div class="col-12">
+                <div class="form-label">Suggest Sample Answers</div>
+                <div class="chip-group" id="set_suggest">
+                  <div class="chip active" data-val="true"  onclick="selectChip(this,'set_suggest')">Enabled</div>
+                  <div class="chip"        data-val="false" onclick="selectChip(this,'set_suggest')">Disabled</div>
+                </div>
+              </div>
+              <div class="col-12 mt-2">
+                <button class="btn-primary-custom" onclick="saveSettings()">
+                  <i class="bi bi-check-circle"></i> Save Settings
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div><!-- /main-content -->
+</div><!-- /app-wrapper -->
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════════
+const state = {
+  sessionId: null,
+  currentQuestion: null,
+  questionNumber: 1,
+  totalQuestions: 5,
+  timer: null,
+  timerSeconds: 0,
+  timerLimit: 120,  // seconds per question
+  sessionStartTime: null,
+  uploadedContext: '',
+  chatHistory: [],
+  agentConfig: {},
+  generatedQuestions: [],
+};
+
+// ═══════════════════════════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════════════════════════
+const pageTitles = {
+  dashboard: 'Dashboard',
+  interview:  'Mock Interview',
+  questions:  'Question Bank',
+  chat:       'AI Chat Coach',
+  progress:   'Progress Tracker',
+  settings:   'Agent Settings',
+};
+
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.textContent.trim().toLowerCase().includes(pageTitles[id].split(' ')[0].toLowerCase()))
+      n.classList.add('active');
+  });
+  document.getElementById('topbarTitle').textContent = pageTitles[id];
+  if (id === 'progress') loadProgress();
+  if (id === 'dashboard') loadDashboard();
+  if (id === 'settings') loadSettings();
+  closeSidebar();
+}
+
+function toggleSidebar() {
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('sidebarOverlay');
+  sb.classList.toggle('open');
+  ov.style.display = sb.classList.contains('open') ? 'block' : 'none';
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').style.display = 'none';
+}
+
+// ═══════════════════════════════════════════════════════════
+//  THEME
+// ═══════════════════════════════════════════════════════════
+function toggleTheme() {
+  const html = document.documentElement;
+  const isDark = html.getAttribute('data-theme') === 'dark';
+  html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  document.getElementById('themeIcon').className = isDark
+    ? 'bi bi-moon-stars-fill' : 'bi bi-sun-fill';
+  localStorage.setItem('theme', isDark ? 'light' : 'dark');
+}
+(function initTheme() {
+  const saved = localStorage.getItem('theme') || 'light';
+  document.documentElement.setAttribute('data-theme', saved);
+  document.getElementById('themeIcon').className = saved === 'dark'
+    ? 'bi bi-sun-fill' : 'bi bi-moon-stars-fill';
+})();
+
+// ═══════════════════════════════════════════════════════════
+//  CHIP SELECTOR
+// ═══════════════════════════════════════════════════════════
+function selectChip(el, groupId) {
+  document.querySelectorAll(`#${groupId} .chip`).forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+}
+function getActiveChip(groupId) {
+  const el = document.querySelector(`#${groupId} .chip.active`);
+  return el ? el.dataset.val : null;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  FILE UPLOAD
+// ═══════════════════════════════════════════════════════════
+async function handleFileUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const formData = new FormData();
+  formData.append('file', file);
+  document.getElementById('uploadStatus').innerHTML =
+    '<i class="bi bi-arrow-repeat spin"></i> Extracting text…';
+  try {
+    const res = await fetch('/api/upload', { method: 'POST', body: formData });
+    const data = await res.json();
+    if (data.success) {
+      state.uploadedContext = data.text;
+      document.getElementById('contextText').value = data.preview;
+      document.getElementById('uploadStatus').innerHTML =
+        `<i class="bi bi-check-circle-fill" style="color:var(--success)"></i> ${file.name} loaded (${data.text.length} chars)`;
+      showToast('File uploaded successfully', 'success');
+    } else {
+      document.getElementById('uploadStatus').innerHTML =
+        `<i class="bi bi-exclamation-circle" style="color:var(--danger)"></i> ${data.error}`;
+    }
+  } catch(e) {
+    document.getElementById('uploadStatus').innerHTML =
+      `<i class="bi bi-exclamation-circle" style="color:var(--danger)"></i> Upload failed`;
+  }
+}
+
+// Drag-and-drop
+const uploadZone = document.getElementById('uploadZone');
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault(); uploadZone.classList.remove('drag');
+  const fi = document.getElementById('fileInput');
+  fi.files = e.dataTransfer.files;
+  handleFileUpload(fi);
+});
+
+// ═══════════════════════════════════════════════════════════
+//  TIMER
+// ═══════════════════════════════════════════════════════════
+function startTimer() {
+  clearInterval(state.timer);
+  state.timerSeconds = 0;
+  state.timerLimit = 120;
+  updateTimerDisplay();
+  state.timer = setInterval(() => {
+    state.timerSeconds++;
+    updateTimerDisplay();
+  }, 1000);
+}
+
+function stopTimer() {
+  clearInterval(state.timer);
+  state.timer = null;
+}
+
+function updateTimerDisplay() {
+  const el = document.getElementById('timerDisplay');
+  const prog = document.getElementById('timerProgress');
+  const s = state.timerSeconds;
+  const mm = String(Math.floor(s / 60)).padStart(2, '0');
+  const ss = String(s % 60).padStart(2, '0');
+  el.textContent = `${mm}:${ss}`;
+  const pct = Math.min(100, (s / state.timerLimit) * 100);
+  if (prog) prog.style.width = (100 - pct) + '%';
+  el.className = 'timer-display';
+  if (s > state.timerLimit * 0.75) el.classList.add('warning');
+  if (s > state.timerLimit) el.classList.add('danger');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  START INTERVIEW
+// ═══════════════════════════════════════════════════════════
+async function startInterview() {
+  const config = {
+    interview_type: document.getElementById('cfg_type').value,
+    difficulty:     document.getElementById('cfg_difficulty').value,
+    target_role:    document.getElementById('cfg_role').value,
+    questions_per_session: parseInt(document.getElementById('cfg_count').value),
+    tone:           getActiveChip('toneChips') || 'professional',
+    context:        state.uploadedContext || document.getElementById('contextText').value,
+  };
+
+  showToast('Starting session…', 'info');
+  showPage('interview');
+  document.getElementById('preSession').style.display = 'none';
+  document.getElementById('liveSession').style.display = 'block';
+  document.getElementById('sessionReport').style.display = 'none';
+
+  const chatEl = document.getElementById('chatMessages');
+  chatEl.innerHTML = '';
+  addTypingIndicator();
+
+  try {
+    const res = await fetch('/api/session/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(config),
+    });
+    const data = await res.json();
+    removeTypingIndicator();
+
+    if (data.error) { showToast(data.error, 'error'); return; }
+
+    state.sessionId      = data.session_id;
+    state.currentQuestion = data.question;
+    state.questionNumber  = 1;
+    state.totalQuestions  = data.total_questions;
+    state.sessionStartTime = Date.now();
+
+    // Config pills
+    renderSessionPills(config);
+    document.getElementById('qProgressText').textContent =
+      `Q ${state.questionNumber} / ${state.totalQuestions}`;
+
+    addBotMessage(data.message);
+    startTimer();
+    document.getElementById('answerInput').focus();
+  } catch(e) {
+    removeTypingIndicator();
+    showToast('Failed to start session: ' + e.message, 'error');
+  }
+}
+
+function renderSessionPills(config) {
+  const labels = {
+    interview_type: { mixed:'Mixed', hr:'HR', technical:'Technical', behavioral:'Behavioral' },
+    difficulty: { beginner:'Beginner', intermediate:'Intermediate', advanced:'Advanced' },
+    target_role: { software_engineering:'Software Eng', data_science:'Data Science',
+                   core_engineering:'Core Eng', finance:'Finance', sales:'Sales', generic:'Generic' },
+    tone: { professional:'Professional', friendly:'Friendly', strict:'Strict', encouraging:'Encouraging' },
+  };
+  const pills = ['interview_type','difficulty','target_role','tone'].map(k =>
+    `<span class="session-config-pill"><i class="bi bi-tag"></i>${labels[k]?.[config[k]] || config[k]}</span>`
+  ).join('');
+  document.getElementById('sessionConfigPills').innerHTML = pills;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  SUBMIT ANSWER
+// ═══════════════════════════════════════════════════════════
+async function submitAnswer() {
+  const input = document.getElementById('answerInput');
+  const answer = input.value.trim();
+  if (!answer || !state.sessionId) return;
+
+  addUserMessage(answer);
+  input.value = '';
+  input.style.height = 'auto';
+  stopTimer();
+  addTypingIndicator();
+
+  try {
+    const res = await fetch('/api/session/answer', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: state.sessionId, answer }),
+    });
+    const data = await res.json();
+    removeTypingIndicator();
+
+    if (data.error) { showToast(data.error, 'error'); return; }
+
+    addBotMessage(data.message, data.feedback, data.score);
+
+    if (data.session_complete) {
+      stopTimer();
+      setTimeout(() => showSessionReport(data), 800);
+    } else {
+      state.currentQuestion = data.next_question;
+      state.questionNumber  = data.question_number;
+      document.getElementById('qProgressText').textContent =
+        `Q ${state.questionNumber} / ${state.totalQuestions}`;
+      startTimer();
+    }
+  } catch(e) {
+    removeTypingIndicator();
+    showToast('Error submitting answer: ' + e.message, 'error');
+  }
+}
+
+function handleAnswerKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitAnswer(); }
+}
+
+function endSessionEarly() {
+  if (!confirm('End session early? Progress will be lost.')) return;
+  stopTimer();
+  state.sessionId = null;
+  document.getElementById('liveSession').style.display = 'none';
+  document.getElementById('preSession').style.display = 'block';
+  showPage('dashboard');
+  showToast('Session ended', 'info');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  SESSION REPORT
+// ═══════════════════════════════════════════════════════════
+function showSessionReport(data) {
+  document.getElementById('liveSession').style.display = 'none';
+  const summary = data.summary || {};
+  const allQA   = data.all_qa || [];
+  const score   = summary.overall_score || 0;
+  const grade   = summary.grade || '—';
+  const pct     = Math.min(100, Math.round((score / 10) * 100));
+
+  const strengthsHTML = (summary.top_strengths || []).map(s =>
+    `<span class="tag tag-success"><i class="bi bi-check-lg"></i> ${s}</span>`).join('');
+  const improvHTML = (summary.areas_for_improvement || []).map(s =>
+    `<span class="tag tag-warn"><i class="bi bi-exclamation"></i> ${s}</span>`).join('');
+  const studyHTML = (summary.study_topics || []).map(t =>
+    `<li style="font-size:13px;color:var(--muted);">${t}</li>`).join('');
+
+  const qaHTML = allQA.map((qa, i) => {
+    const sc = qa.score || 0;
+    const cls = sc >= 7 ? 'score-high' : sc >= 5 ? 'score-mid' : 'score-low';
+    const fb = qa.feedback || {};
+    return `
+      <div class="feedback-card">
+        <div class="feedback-header" onclick="toggleFeedback(this)">
+          <div class="score-badge ${cls}">${sc}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${qa.question}</div>
+            <div style="font-size:11px;color:var(--muted);">${qa.is_followup ? 'Follow-up' : 'Main Q'} · ${new Date(qa.timestamp).toLocaleTimeString()}</div>
+          </div>
+          <i class="bi bi-chevron-down" style="color:var(--muted);transition:transform .2s;"></i>
+        </div>
+        <div class="feedback-body">
+          <div style="background:var(--surface2);border-radius:9px;padding:10px 13px;margin-bottom:10px;font-size:13px;font-style:italic;">"${qa.answer}"</div>
+          ${fb.strengths    ? `<p style="font-size:13px;"><strong>✅ Strengths:</strong> ${fb.strengths}</p>` : ''}
+          ${fb.weaknesses   ? `<p style="font-size:13px;"><strong>⚠️ Weaknesses:</strong> ${fb.weaknesses}</p>` : ''}
+          ${fb.clarity      ? `<p style="font-size:13px;"><strong>💬 Clarity:</strong> ${fb.clarity}</p>` : ''}
+          ${fb.technical_accuracy ? `<p style="font-size:13px;"><strong>⚙️ Technical:</strong> ${fb.technical_accuracy}</p>` : ''}
+          ${fb.improved_answer ? `<div style="background:rgba(79,70,229,.07);border-left:3px solid var(--accent);padding:10px 13px;border-radius:0 9px 9px 0;font-size:13px;margin-top:8px;"><strong>💡 Sample Answer:</strong><br>${fb.improved_answer}</div>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+
+  const recColor = {
+    'Strong Yes': 'var(--success)', 'Yes': 'var(--info)',
+    'Maybe': 'var(--warning)',      'No': 'var(--danger)',
+  };
+  const rec = summary.hiring_recommendation || '—';
+
+  document.getElementById('sessionReport').style.display = 'block';
+  document.getElementById('sessionReport').innerHTML = `
+    <div class="section-title">Session Complete 🎉</div>
+    <div class="section-sub">${new Date().toLocaleString()}</div>
+    <div class="row g-3 mb-3">
+      <div class="col-lg-4">
+        <div class="card" style="text-align:center;">
+          <div style="display:flex;justify-content:center;margin-bottom:14px;">
+            <div class="grade-ring" style="background:conic-gradient(var(--accent) ${pct}%, var(--surface2) ${pct}%);">
+              <span>${grade}</span>
+            </div>
+          </div>
+          <div style="font-size:28px;font-weight:800;color:var(--accent);">${score}/10</div>
+          <div style="font-size:13px;color:var(--muted);">Overall Score</div>
+          <div style="margin-top:14px;padding:8px 16px;border-radius:99px;display:inline-block;
+               background:${recColor[rec] || 'var(--muted)'};color:#fff;font-size:12px;font-weight:600;">
+            ${rec}
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-8">
+        <div class="card h-100">
+          <div class="card-header-line">
+            <div class="card-icon"><i class="bi bi-journal-text"></i></div>
+            <div><div class="card-title">Holistic Feedback</div></div>
+          </div>
+          <p style="font-size:13.5px;line-height:1.7;">${summary.detailed_feedback || '—'}</p>
+          <hr class="divider">
+          <div style="margin-bottom:8px;font-weight:600;font-size:13px;">Top Strengths</div>
+          <div>${strengthsHTML || '<span style="color:var(--muted);font-size:13px;">—</span>'}</div>
+          <div style="margin:10px 0 8px;font-weight:600;font-size:13px;">Areas to Improve</div>
+          <div>${improvHTML || '<span style="color:var(--muted);font-size:13px;">—</span>'}</div>
+          ${studyHTML ? `<div style="margin-top:10px;font-weight:600;font-size:13px;">Recommended Study Topics</div><ul style="padding-left:18px;margin-top:6px;">${studyHTML}</ul>` : ''}
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-header-line">
+        <div class="card-icon" style="background:linear-gradient(135deg,var(--info),#2563eb);">
+          <i class="bi bi-chat-square-text-fill"></i>
+        </div>
+        <div><div class="card-title">Question-by-Question Breakdown</div></div>
+      </div>
+      ${qaHTML}
+    </div>
+
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn-primary-custom" onclick="showPage('dashboard');resetInterviewUI();">
+        <i class="bi bi-arrow-repeat"></i> Start New Session
+      </button>
+      <button class="btn-outline-custom" onclick="showPage('progress')">
+        <i class="bi bi-graph-up"></i> View Progress
+      </button>
+    </div>`;
+
+  loadDashboard();
+}
+
+function toggleFeedback(header) {
+  const body = header.nextElementSibling;
+  const icon = header.querySelector('i.bi-chevron-down, i.bi-chevron-up');
+  body.classList.toggle('open');
+  if (icon) icon.className = body.classList.contains('open')
+    ? 'bi bi-chevron-up' : 'bi bi-chevron-down';
+}
+
+function resetInterviewUI() {
+  document.getElementById('preSession').style.display = 'block';
+  document.getElementById('liveSession').style.display = 'none';
+  document.getElementById('sessionReport').style.display = 'none';
+  state.sessionId = null;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  CHAT HELPERS
+// ═══════════════════════════════════════════════════════════
+function addBotMessage(text, feedback, score) {
+  const chat = document.getElementById('chatMessages');
+  const formatted = markdownToHTML(text);
+  const time = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  const div = document.createElement('div');
+  div.className = 'msg-row';
+  div.innerHTML = `
+    <div class="msg-avatar bot"><i class="bi bi-cpu-fill"></i></div>
+    <div>
+      <div class="msg-bubble bot">${formatted}</div>
+      <div class="msg-time">${time}</div>
+    </div>`;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function addUserMessage(text) {
+  const chat = document.getElementById('chatMessages');
+  const time = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  const div = document.createElement('div');
+  div.className = 'msg-row user';
+  div.innerHTML = `
+    <div class="msg-avatar user"><i class="bi bi-person-fill"></i></div>
+    <div>
+      <div class="msg-bubble user">${escapeHTML(text)}</div>
+      <div class="msg-time">${time}</div>
+    </div>`;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function addTypingIndicator() {
+  const chat = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = 'msg-row';
+  div.id = 'typingIndicator';
+  div.innerHTML = `
+    <div class="msg-avatar bot"><i class="bi bi-cpu-fill"></i></div>
+    <div class="typing-indicator">
+      <div class="typing-dot"></div>
+      <div class="typing-dot"></div>
+      <div class="typing-dot"></div>
+    </div>`;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function removeTypingIndicator() {
+  const el = document.getElementById('typingIndicator');
+  if (el) el.remove();
+}
+
+function markdownToHTML(text) {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/_(.+?)_/g, '<em>$1</em>')
+    .replace(/`(.+?)`/g, '<code style="background:var(--surface2);padding:1px 5px;border-radius:4px;">$1</code>')
+    .replace(/\n/g, '<br>');
+}
+
+function escapeHTML(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+// ═══════════════════════════════════════════════════════════
+//  AI CHAT COACH
+// ═══════════════════════════════════════════════════════════
+async function sendCoachMessage() {
+  const input = document.getElementById('coachInput');
+  const msg = input.value.trim();
+  if (!msg) return;
+
+  const chat = document.getElementById('coachMessages');
+  const time = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  const userDiv = document.createElement('div');
+  userDiv.className = 'msg-row user';
+  userDiv.innerHTML = `
+    <div class="msg-avatar user"><i class="bi bi-person-fill"></i></div>
+    <div>
+      <div class="msg-bubble user">${escapeHTML(msg)}</div>
+      <div class="msg-time">${time}</div>
+    </div>`;
+  chat.appendChild(userDiv);
+  chat.scrollTop = chat.scrollHeight;
+  input.value = '';
+  input.style.height = 'auto';
+
+  state.chatHistory.push({ role: 'user', content: msg });
+
+  // Typing
+  const typDiv = document.createElement('div');
+  typDiv.className = 'msg-row'; typDiv.id = 'coachTyping';
+  typDiv.innerHTML = `
+    <div class="msg-avatar bot"><i class="bi bi-cpu-fill"></i></div>
+    <div class="typing-indicator">
+      <div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>
+    </div>`;
+  chat.appendChild(typDiv);
+  chat.scrollTop = chat.scrollHeight;
+
+  try {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ message: msg, history: state.chatHistory }),
+    });
+    const data = await res.json();
+    const reply = data.reply || 'Sorry, I had trouble responding. Please try again.';
+    state.chatHistory.push({ role: 'assistant', content: reply });
+
+    document.getElementById('coachTyping')?.remove();
+    const t2 = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+    const botDiv = document.createElement('div');
+    botDiv.className = 'msg-row';
+    botDiv.innerHTML = `
+      <div class="msg-avatar bot"><i class="bi bi-cpu-fill"></i></div>
+      <div>
+        <div class="msg-bubble bot">${markdownToHTML(reply)}</div>
+        <div class="msg-time">${t2}</div>
+      </div>`;
+    chat.appendChild(botDiv);
+    chat.scrollTop = chat.scrollHeight;
+  } catch(e) {
+    document.getElementById('coachTyping')?.remove();
+    showToast('Coach error: ' + e.message, 'error');
+  }
+}
+
+function handleCoachKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendCoachMessage(); }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  QUESTION BANK
+// ═══════════════════════════════════════════════════════════
+async function generateQuestions() {
+  const btn = document.querySelector('#page-questions .btn-primary-custom');
+  btn.innerHTML = '<i class="bi bi-arrow-repeat spin"></i> Generating…';
+  btn.disabled = true;
+
+  const config = {
+    interview_type: document.getElementById('qb_type').value,
+    difficulty:     document.getElementById('qb_difficulty').value,
+    target_role:    document.getElementById('qb_role').value,
+    count:          parseInt(document.getElementById('qb_count').value),
+    context:        document.getElementById('qb_context').value,
+  };
+
+  try {
+    const res = await fetch('/api/questions/generate', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(config),
+    });
+    const data = await res.json();
+    state.generatedQuestions = data.questions || [];
+    renderQuestionBank(state.generatedQuestions);
+    document.getElementById('copyQBtn').disabled = state.generatedQuestions.length === 0;
+  } catch(e) {
+    showToast('Generation failed: ' + e.message, 'error');
+  } finally {
+    btn.innerHTML = '<i class="bi bi-stars"></i> Generate';
+    btn.disabled = false;
+  }
+}
+
+function renderQuestionBank(questions) {
+  const el = document.getElementById('questionsList');
+  if (!questions.length) {
+    el.innerHTML = '<div class="empty-state"><i class="bi bi-exclamation-circle d-block"></i>No questions generated. Try again.</div>';
+    return;
+  }
+  el.innerHTML = questions.map((q, i) => `
+    <div style="display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);">
+      <span style="min-width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;
+            font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;">${i+1}</span>
+      <div style="flex:1;font-size:13.5px;line-height:1.6;">${escapeHTML(q)}</div>
+    </div>`).join('');
+}
+
+function copyQuestions() {
+  const text = state.generatedQuestions.map((q,i) => `${i+1}. ${q}`).join('\n');
+  navigator.clipboard.writeText(text).then(() => showToast('Questions copied!','success'));
+}
+
+// ═══════════════════════════════════════════════════════════
+//  PROGRESS TRACKER
+// ═══════════════════════════════════════════════════════════
+async function loadProgress() {
+  try {
+    const res = await fetch('/api/history');
+    const data = await res.json();
+    const history = data.history || [];
+    const el = document.getElementById('progressContent');
+    document.getElementById('sessionCountBadge').textContent = history.length;
+
+    if (!history.length) {
+      el.innerHTML = '<div class="empty-state"><i class="bi bi-graph-up d-block"></i>No sessions yet. Complete your first interview!</div>';
+      return;
+    }
+
+    const recent = history.slice(-10);
+    const maxScore = 10;
+    const barsHTML = recent.map((h, i) => {
+      const sc = h.overall_score || 0;
+      const hPct = Math.round((sc / maxScore) * 100);
+      const d = new Date(h.date).toLocaleDateString('en', {month:'short',day:'numeric'});
+      return `
+        <div class="chart-bar-col">
+          <div class="chart-bar" data-val="${sc.toFixed(1)}" style="height:${hPct}%;"></div>
+          <div class="chart-lbl">${d}</div>
+        </div>`;
+    }).join('');
+
+    const scores = recent.map(h => h.overall_score || 0);
+    const avg = scores.reduce((a,b) => a+b, 0) / scores.length;
+    const best = Math.max(...scores);
+    const trendStr = data.trend === 'improving' ? '📈 Improving' :
+                     data.trend === 'declining'  ? '📉 Declining'  : '➡️ Stable';
+
+    const historyRowsHTML = history.slice().reverse().map(h => `
+      <tr>
+        <td style="font-size:12.5px;">${new Date(h.date).toLocaleDateString()}</td>
+        <td><span class="tag tag-info">${h.config?.interview_type || '—'}</span></td>
+        <td><span class="tag tag-info">${h.config?.difficulty || '—'}</span></td>
+        <td style="font-weight:700;color:var(--accent);">${(h.overall_score||0).toFixed(1)}/10</td>
+        <td><strong>${h.grade || '—'}</strong></td>
+        <td style="font-size:12px;color:var(--muted);">${h.total_questions || 0} Qs</td>
+      </tr>`).join('');
+
+    el.innerHTML = `
+      <div class="stats-grid mb-4">
+        <div class="stat-card"><div class="stat-value">${history.length}</div><div class="stat-label">Total Sessions</div></div>
+        <div class="stat-card"><div class="stat-value">${avg.toFixed(1)}</div><div class="stat-label">Average Score</div></div>
+        <div class="stat-card"><div class="stat-value">${best.toFixed(1)}</div><div class="stat-label">Best Score</div></div>
+        <div class="stat-card"><div class="stat-value" style="font-size:18px;">${trendStr}</div><div class="stat-label">Trend</div></div>
+      </div>
+
+      <div class="card mb-3">
+        <div class="card-header-line">
+          <div class="card-icon"><i class="bi bi-bar-chart-fill"></i></div>
+          <div><div class="card-title">Score History (Last 10)</div></div>
+        </div>
+        <div class="chart-wrap">
+          <div class="chart-bars">${barsHTML}</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header-line">
+          <div class="card-icon" style="background:linear-gradient(135deg,var(--info),#2563eb);">
+            <i class="bi bi-table"></i>
+          </div>
+          <div><div class="card-title">All Sessions</div></div>
+        </div>
+        <div style="overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;">
+            <thead>
+              <tr style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">
+                <th style="padding:8px 10px;text-align:left;border-bottom:1px solid var(--border);">Date</th>
+                <th style="padding:8px 10px;text-align:left;border-bottom:1px solid var(--border);">Type</th>
+                <th style="padding:8px 10px;text-align:left;border-bottom:1px solid var(--border);">Level</th>
+                <th style="padding:8px 10px;text-align:left;border-bottom:1px solid var(--border);">Score</th>
+                <th style="padding:8px 10px;text-align:left;border-bottom:1px solid var(--border);">Grade</th>
+                <th style="padding:8px 10px;text-align:left;border-bottom:1px solid var(--border);">Qs</th>
+              </tr>
+            </thead>
+            <tbody style="font-size:13px;">${historyRowsHTML}</tbody>
+          </table>
+        </div>
+      </div>`;
+  } catch(e) {
+    document.getElementById('progressContent').innerHTML =
+      '<div class="empty-state"><i class="bi bi-exclamation-circle d-block"></i>Failed to load history.</div>';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  DASHBOARD
+// ═══════════════════════════════════════════════════════════
+async function loadDashboard() {
+  try {
+    const res = await fetch('/api/history');
+    const data = await res.json();
+    const history = data.history || [];
+    document.getElementById('statSessions').textContent = history.length;
+    document.getElementById('sessionCountBadge').textContent = history.length;
+
+    if (history.length) {
+      const scores = history.map(h => h.overall_score || 0);
+      const avg = (scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1);
+      const grades = history.map(h=>h.grade).filter(Boolean);
+      const gradeOrder = ['A+','A','B+','B','C','D','F'];
+      const best = grades.sort((a,b)=>gradeOrder.indexOf(a)-gradeOrder.indexOf(b))[0] || '—';
+      document.getElementById('statAvgScore').textContent = avg;
+      document.getElementById('statBestGrade').textContent = best;
+      document.getElementById('statTrend').textContent =
+        data.trend === 'improving' ? '📈 Up' : data.trend === 'declining' ? '📉 Down' : '➡️ Stable';
+
+      const recent = history.slice(-5).reverse();
+      document.getElementById('recentSessionsList').innerHTML = recent.map(h => {
+        const sc = h.overall_score || 0;
+        const cls = sc >= 7 ? 'score-high' : sc >= 5 ? 'score-mid' : 'score-low';
+        return `
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);">
+            <div class="score-badge ${cls}" style="width:36px;height:36px;font-size:13px;">${sc.toFixed(1)}</div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:13px;font-weight:600;">${h.config?.target_role?.replace(/_/g,' ') || 'General'}</div>
+              <div style="font-size:11px;color:var(--muted);">${new Date(h.date).toLocaleDateString()} · ${h.config?.interview_type || '—'} · ${h.grade}</div>
+            </div>
+          </div>`;
+      }).join('');
+    }
+  } catch(e) { /* silently fail */ }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  SETTINGS
+// ═══════════════════════════════════════════════════════════
+async function loadSettings() {
+  try {
+    const res = await fetch('/api/config');
+    const cfg = await res.json();
+    state.agentConfig = cfg;
+    document.getElementById('set_type').value       = cfg.interview_type || 'mixed';
+    document.getElementById('set_difficulty').value = cfg.difficulty     || 'intermediate';
+    document.getElementById('set_role').value        = cfg.target_role   || 'software_engineering';
+    document.getElementById('set_tone').value        = cfg.tone          || 'professional';
+    document.getElementById('set_qcount').value      = cfg.questions_per_session || 5;
+    document.getElementById('set_followups').value   = cfg.max_followups || 2;
+    // suggest chip
+    const suggestVal = String(cfg.suggest_improved_answers);
+    document.querySelectorAll('#set_suggest .chip').forEach(c => {
+      c.classList.toggle('active', c.dataset.val === suggestVal);
+    });
+  } catch(e) { /* ignore */ }
+}
+
+async function saveSettings() {
+  const payload = {
+    interview_type:           document.getElementById('set_type').value,
+    difficulty:               document.getElementById('set_difficulty').value,
+    target_role:              document.getElementById('set_role').value,
+    tone:                     document.getElementById('set_tone').value,
+    questions_per_session:    parseInt(document.getElementById('set_qcount').value),
+    max_followups:            parseInt(document.getElementById('set_followups').value),
+    suggest_improved_answers: getActiveChip('set_suggest') === 'true',
+  };
+  try {
+    const res = await fetch('/api/config', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (data.success) showToast('Settings saved!', 'success');
+  } catch(e) { showToast('Save failed', 'error'); }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════════════════════════
+function showToast(msg, type='info') {
+  const icons = { success:'check-circle-fill', error:'x-circle-fill', info:'info-circle-fill', warning:'exclamation-triangle-fill' };
+  const colors = { success:'var(--success)', error:'var(--danger)', info:'var(--info)', warning:'var(--warning)' };
+  const container = document.getElementById('toastContainer');
+  const div = document.createElement('div');
+  div.className = 'toast-custom';
+  div.innerHTML = `<i class="bi bi-${icons[type]||'info-circle-fill'}" style="color:${colors[type]};font-size:18px;"></i><span>${msg}</span>`;
+  container.appendChild(div);
+  setTimeout(() => div.remove(), 3500);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  SPIN ANIMATION
+// ═══════════════════════════════════════════════════════════
+const style = document.createElement('style');
+style.textContent = `@keyframes spin{to{transform:rotate(360deg)}}.spin{display:inline-block;animation:spin .8s linear infinite;}`;
+document.head.appendChild(style);
+
+// ═══════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════
+loadDashboard();
+</script>
+</body>
+</html>

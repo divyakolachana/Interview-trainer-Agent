@@ -104,7 +104,7 @@ def call_watsonx(prompt: str, max_tokens: int = 1024, temperature: float = 0.7) 
                 "stop_sequences": ["<|endoftext|>"],
             },
         )
-        response = model.generate_text(prompt=prompt)
+        response = model.generate_text(prompt=prompt) 
         return response.strip() if isinstance(response, str) else str(response)
     except Exception as e:
         print(f"[Watsonx] Inference error: {e}")
